@@ -1,0 +1,24 @@
+plugins {
+    id 'org.spongepowered.plugin' version '0.9.0'
+}
+
+group = 'me.htna.project'
+version = '0.0.1'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.spongepowered:spongeapi:7.3.0'
+    compileOnly 'net.luckperms:api:5.3'
+    annotationProcessor 'org.spongepowered:spongeapi:7.3.0'
+
+    compileOnly 'org.projectlombok:lombok:1.18.20'
+    annotationProcessor 'org.projectlombok:lombok:1.18.20'
+}
+
+sponge.plugin.id = 'chatdecorator'
