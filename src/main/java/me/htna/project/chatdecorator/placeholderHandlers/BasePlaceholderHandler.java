@@ -9,10 +9,8 @@ import java.time.format.DateTimeFormatter;
 
 public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
 
-    private ChatDecorator plugin;
-
     protected BasePlaceholderHandler() {
-        plugin = ChatDecorator.getInstance();
+
     }
 
     /**
@@ -22,10 +20,11 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return datetime format string
      */
-    protected String getDateTimeString(Instant instant, String format) {
+    public static String getDateTimeString(Instant instant, String format) {
         if (instant == null)
             return null;
 
+        ChatDecorator plugin = ChatDecorator.getInstance();
         DateTimeFormatter dateTimePattern;
         try {
             dateTimePattern = DateTimeFormatter.ofPattern(format);
@@ -44,10 +43,11 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return date format string
      */
-    protected String getDateString(Instant instant, String format) {
+    public static String getDateString(Instant instant, String format) {
         if (instant == null)
             return null;
 
+        ChatDecorator plugin = ChatDecorator.getInstance();
         DateTimeFormatter dateTimePattern;
         try {
             dateTimePattern = DateTimeFormatter.ofPattern(format);
@@ -66,10 +66,11 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return time format string
      */
-    protected String getTimeString(Instant instant, String format) {
+    public static String getTimeString(Instant instant, String format) {
         if (instant == null)
             return null;
 
+        ChatDecorator plugin = ChatDecorator.getInstance();
         DateTimeFormatter dateTimePattern;
         try {
             dateTimePattern = DateTimeFormatter.ofPattern(format);
@@ -87,7 +88,7 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return datetime format string
      */
-    protected String getNowDateTimeString(String format) {
+    public static String getNowDateTimeString(String format) {
         return getDateTimeString(Instant.now(), format);
     }
 
@@ -96,7 +97,7 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return date format string
      */
-    protected String getNowDateString(String format) {
+    public static String getNowDateString(String format) {
         return getDateString(Instant.now(), format);
     }
 
@@ -105,7 +106,7 @@ public abstract class BasePlaceholderHandler implements IPlaceholderHandler {
      * @param format format string
      * @return time format string
      */
-    protected String getNowTimeString(String format) {
+    public static String getNowTimeString(String format) {
         return getTimeString(Instant.now(), format);
     }
 }

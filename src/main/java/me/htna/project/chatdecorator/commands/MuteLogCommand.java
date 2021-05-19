@@ -3,6 +3,7 @@ package me.htna.project.chatdecorator.commands;
 import me.htna.project.chatdecorator.ChatDecorator;
 import me.htna.project.chatdecorator.Config;
 import me.htna.project.chatdecorator.UserManager;
+import me.htna.project.chatdecorator.placeholderHandlers.BasePlaceholderHandler;
 import me.htna.project.chatdecorator.struct.MuteInfo;
 import me.htna.project.chatdecorator.struct.UserInfo;
 import org.spongepowered.api.command.CommandException;
@@ -12,15 +13,19 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class MuteLogCommand extends BaseCommand{
+public class MuteLogCommand extends BaseCommand {
 
     public final static String SUBPERMISSION = "mutelog";
     public final static String[] ALIAS = {"mutelog"};
+
+    // private final static String mute_placeholder_format = "[&4M&r] (&b%mute_datetime%&r) (&6%mute_source_name%&r)";
+    // private final static String unmute_placeholder_format = "[&2U&r] (&b%unmute_datetime%&r) (&6%unmute_source_name%&r)";
 
     public MuteLogCommand() {
         super(ALIAS, "Unmute user", SUBPERMISSION);
@@ -46,18 +51,24 @@ public class MuteLogCommand extends BaseCommand{
             return CommandResult.empty();
         }
 
-        src.sendMessage(Text.of("Not implements"));
-        return CommandResult.success();
-
-        /*
-        Config config = Config.getInstance();
         List<MuteInfo> muteInfoList = userInfo.get().getMuteInfoList();
-        muteInfoList.forEach(x -> {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Mute source: ").append(userManager.getName(userInfo.get().getUuid()));
-            // sb.append(" Mute DateTime: ").append(config.)
-        });
-        return null;
-        */
+        String datetimeFormat = Config.getInstance().getDateTimeFormatter();
+        int count = 0;
+        for (MuteInfo muteInfo : muteInfoList) {
+            StringBuilder sb = new StringBuilder()
+                    .append("&c#").append(++count).append("&r ")
+                    .append("[&eM&r] (&9").append(BasePlaceholderHandler.getDateTimeString(muteInfo.getMuteDateTime(), datetimeFormat))
+                    .append("&r) (&6").append(userManager.getName(muteInfo.getMuteSourceUuid())).append("&r) : &a").append(muteInfo.getReason()).append("&r");
+            if (muteInfo.isComplete()) {
+                sb.append(" -> ")
+                        .append("[&eU&r] (&9").append(BasePlaceholderHandler.getDateTimeString(muteInfo.getUnmuteDateTime(), datetimeFormat))
+                        .append("&r) (&6").append(userManager.getName(muteInfo.getUnmuteSourceUuid())).append("&r)");
+            }
+
+            Text text = TextSerializers.FORMATTING_CODE.deserialize(sb.toString());
+            src.sendMessage(text);
+        }
+
+        return CommandResult.success();
     }
 }

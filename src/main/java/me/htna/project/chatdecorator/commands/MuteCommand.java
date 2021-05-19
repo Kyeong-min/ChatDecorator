@@ -10,15 +10,13 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
-import org.spongepowered.api.command.source.ConsoleSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
-public class MuteCommand extends BaseCommand{
+public class MuteCommand extends BaseCommand {
 
     public final static String SUBPERMISSION = "mute";
     public final static String[] ALIAS = {"mute"};
@@ -39,9 +37,9 @@ public class MuteCommand extends BaseCommand{
 
         ChatDecorator.getInstance().getLogger().info(
                 new StringBuilder().append("Execute mute command: ")
-                .append(sourceUuid).append(" -> ").append(player.getUniqueId())
-                .append(" (").append(reason).append(')').toString());
-        
+                        .append(sourceUuid).append(" -> ").append(player.getUniqueId())
+                        .append(" (").append(reason).append(')').toString());
+
         boolean result = UserManager.getInstance().muteUser(
                 player.getUniqueId().toString(),
                 sourceUuid, reason);

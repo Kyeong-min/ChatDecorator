@@ -1,6 +1,5 @@
 package me.htna.project.chatdecorator.placeholderHandlers;
 
-import me.htna.project.chatdecorator.ChatDecorator;
 import me.htna.project.chatdecorator.Config;
 import me.htna.project.chatdecorator.UserManager;
 import me.htna.project.chatdecorator.struct.Message;
@@ -59,7 +58,7 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      * @param target {@link Player}
      * @return Mute source name
      */
-    private String getMuteSourceName(Player target) {
+    private String getLastMuteSourceName(Player target) {
         Optional<MuteInfo> muteInfo = getLastMuteInfo(target);
         return muteInfo.map(x -> UserManager.getInstance().getName(x.getMuteSourceUuid())).orElse(null);
     }
@@ -70,7 +69,7 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      * @param target {@link Player}
      * @return Mute datetime string
      */
-    private String getMuteDateTime(Player target) {
+    private String getLastMuteDateTime(Player target) {
         Optional<MuteInfo> muteInfo = getLastMuteInfo(target);
         return muteInfo.map(x -> getDateTimeString(x.getMuteDateTime(), Config.getInstance().getDateTimeFormatter())).orElse(null);
     }
@@ -81,7 +80,7 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      * @param target {@link Player}
      * @return Mute reason
      */
-    private String getMuteReason(Player target) {
+    private String getLastMuteReason(Player target) {
         Optional<MuteInfo> muteInfo = getLastMuteInfo(target);
         return muteInfo.map(MuteInfo::getReason).orElse(null);
     }
@@ -92,7 +91,7 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      * @param target {@link Player}
      * @return Unmute source name
      */
-    private String getUnmuteSourceName(Player target) {
+    private String getLastUnmuteSourceName(Player target) {
         Optional<MuteInfo> muteInfo = getLastMuteInfo(target);
         return muteInfo.map(x -> UserManager.getInstance().getName(x.getUnmuteSourceUuid())).orElse(null);
     }
@@ -103,7 +102,7 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      * @param target {@link Player}
      * @return Unmute datetime string
      */
-    private String getUnmuteDateTime(Player target) {
+    private String getLastUnmuteDateTime(Player target) {
         Optional<MuteInfo> muteInfo = getLastMuteInfo(target);
         return muteInfo.map(x -> getDateTimeString(x.getUnmuteDateTime(), Config.getInstance().getDateTimeFormatter())).orElse(null);
     }
@@ -145,15 +144,15 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
             case "servertime":
                 return getNowTimeString(Config.getInstance().getTimeFormatter());
             case "mute_source_name":
-                return getMuteSourceName(message.getPlayer());
+                return getLastMuteSourceName(message.getPlayer());
             case "mute_reason":
-                return getMuteReason(message.getPlayer());
+                return getLastMuteReason(message.getPlayer());
             case "mute_datetime":
-                return getMuteDateTime(message.getPlayer());
+                return getLastMuteDateTime(message.getPlayer());
             case "unmute_source_name":
-                return getUnmuteSourceName(message.getPlayer());
+                return getLastUnmuteSourceName(message.getPlayer());
             case "unmute_datetime":
-                return getUnmuteDateTime(message.getPlayer());
+                return getLastUnmuteDateTime(message.getPlayer());
         }
 
         return null;
@@ -166,7 +165,6 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      */
     @Override
     public String getPlaceholderHandlerName() {
-        ChatDecorator.getInstance().getLogger().debug("DefaultPlaceholder#getPlaceholderName");
         return "Default";
     }
 
@@ -179,7 +177,6 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      */
     @Override
     public String replace(String placeholder, Message message) {
-        ChatDecorator.getInstance().getLogger().debug("DefaultPlaceholder#replace: " + placeholder);
         return parse(placeholder, message);
     }
 
@@ -191,7 +188,6 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
      */
     @Override
     public boolean IsTargetPlaceholder(String placeholder) {
-        ChatDecorator.getInstance().getLogger().debug("DefaultPlaceholder#IsTargetPlaceHolder: " + placeholder);
         return placeholder.split("\\.").length == 1;
     }
 }

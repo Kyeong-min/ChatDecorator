@@ -62,11 +62,7 @@ public class LPPlaceholderHandler implements IPlaceholderHandler {
      * @return corresponding value
      */
     private String parse(String placeholder, Message message) {
-        ChatDecorator.getInstance().getLogger().debug("LPPlaceholder#parse: " + placeholder);
-
         String[] p = placeholder.split("_");
-        ChatDecorator.getInstance().getLogger().debug("LPPlaceholder#parse, Major: " + p[0] + ", miner: " + p[1]);
-
         User user = lp.getPlayerAdapter(Player.class).getUser(message.getPlayer());
         switch (p[0]) {
             // case "user": return parseUser(p[1], user);
@@ -92,7 +88,6 @@ public class LPPlaceholderHandler implements IPlaceholderHandler {
      */
     @Override
     public String getPlaceholderHandlerName() {
-        ChatDecorator.getInstance().getLogger().debug("LPPlaceholder#getPlaceholderName");
         return "LuckPerms";
     }
 
@@ -105,7 +100,6 @@ public class LPPlaceholderHandler implements IPlaceholderHandler {
      */
     @Override
     public String replace(String placeholder, Message message) {
-        ChatDecorator.getInstance().getLogger().debug("LPPlaceholder#replace: " + placeholder);
         String s = placeholder.split("\\.")[1];
         String key = s.substring(0, s.length() - 1);
 
@@ -120,7 +114,6 @@ public class LPPlaceholderHandler implements IPlaceholderHandler {
      */
     @Override
     public boolean IsTargetPlaceholder(String placeholder) {
-        ChatDecorator.getInstance().getLogger().debug("LPPlaceholder#IsTargetPlaceholder: " + placeholder);
         String[] split = placeholder.split("\\.");
         if (split.length <= 1)
             return false;

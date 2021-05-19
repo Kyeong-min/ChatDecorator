@@ -49,6 +49,17 @@ public class MuteInfo {
     }
 
     /**
+     * Verify that the muteinfo is complete.
+     *
+     * Completed means that it has been muted and unmuted.
+     *
+     * @return
+     */
+    public boolean isComplete() {
+        return muteDateTime != null && unmuteDateTime != null;
+    }
+
+    /**
      * Mute
      *
      * @param sourceUuid Source uuid

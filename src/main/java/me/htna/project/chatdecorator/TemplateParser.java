@@ -116,7 +116,6 @@ public class TemplateParser {
                 // if corresponding value is empty
                 Config config = Config.getInstance();
                 String defaultPlaceholderCorrespondingValue = config.getDefaultPlaceholderCorrespondingValue();
-                ChatDecorator.getInstance().getLogger().debug("defaultPlaceholderCorrespondingValue: " + defaultPlaceholderCorrespondingValue);
 
                 if (defaultPlaceholderCorrespondingValue.isEmpty()) {
                     correspondingValue = placeholder;
