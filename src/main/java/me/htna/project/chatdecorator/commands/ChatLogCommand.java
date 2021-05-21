@@ -75,6 +75,7 @@ public class ChatLogCommand extends BaseCommand {
 
         String format = Config.getInstance().getDateTimeFormatter();
         int count = 0;
+        src.sendMessage(Text.of("========== CHAT LOG =========="));
         for (CHATLOG log : logs) {
             StringBuilder sb = new StringBuilder()
                     .append("&c#").append(++count).append("&r ")
@@ -84,6 +85,7 @@ public class ChatLogCommand extends BaseCommand {
             Text text = TextSerializers.FORMATTING_CODE.deserialize(sb.toString());
             src.sendMessage(text);
         }
+        src.sendMessage(Text.of("============= END ============"));
 
         return CommandResult.successCount(count);
     }

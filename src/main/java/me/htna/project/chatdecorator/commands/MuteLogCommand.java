@@ -54,6 +54,7 @@ public class MuteLogCommand extends BaseCommand {
         List<MuteInfo> muteInfoList = userInfo.get().getMuteInfoList();
         String datetimeFormat = Config.getInstance().getDateTimeFormatter();
         int count = 0;
+        src.sendMessage(Text.of("========== MUTE LOG =========="));
         for (MuteInfo muteInfo : muteInfoList) {
             StringBuilder sb = new StringBuilder()
                     .append("&c#").append(++count).append("&r ")
@@ -68,6 +69,7 @@ public class MuteLogCommand extends BaseCommand {
             Text text = TextSerializers.FORMATTING_CODE.deserialize(sb.toString());
             src.sendMessage(text);
         }
+        src.sendMessage(Text.of("============= END ============"));
 
         return CommandResult.successCount(count);
     }
