@@ -14,6 +14,8 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 public class MuteCommand extends BaseCommand {
@@ -35,15 +37,23 @@ public class MuteCommand extends BaseCommand {
         Player player = args.<Player>getOne("player").get();
         String reason = args.<String>getOne("reason").get();
 
+        String uuid = player.getUniqueId().toString();
+
         ChatDecorator.getInstance().getLogger().info(
                 new StringBuilder().append("Execute mute command: ")
-                        .append(sourceUuid).append(" -> ").append(player.getUniqueId())
+                        .append(sourceUuid).append(" -> ").append(uuid)
                         .append(" (").append(reason).append(')').toString());
 
         boolean result = UserManager.getInstance().muteUser(
-                player.getUniqueId().toString(),
+                uuid,
                 sourceUuid, reason);
         if (result) {
+            try {
+                ChatDecorator.getInstance().getDb().insertMuteInfo(uuid, sourceUuid, Instant.now(), reason);
+            } catch (SQLException e) {
+                ChatDecorator.getInstance().getLogger().error("MuteCommand insert sql failed: " + e);
+                e.printStackTrace();
+            }
             src.sendMessage(Text.of("해당 유저를 뮤트했습니다."));
             Message msg = new Message(player);
             String formatted = TemplateParser.getInstance().parse(Config.getInstance().getMuteTemplate(), msg);

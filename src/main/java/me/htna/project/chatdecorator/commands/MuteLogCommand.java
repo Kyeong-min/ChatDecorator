@@ -69,6 +69,6 @@ public class MuteLogCommand extends BaseCommand {
             src.sendMessage(text);
         }
 
-        return CommandResult.success();
+        return CommandResult.successCount(count);
     }
 }

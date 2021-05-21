@@ -6,6 +6,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.service.user.UserStorageService;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -28,8 +29,8 @@ public class UserManager {
         userInfoList = new HashMap<>();
 
         // put default user info (server console and unknwon)
-        userInfoList.put(IDENT_SERVER_CONSOLE, new UserInfo(IDENT_SERVER_CONSOLE));
-        userInfoList.put(IDENT_UNKNOWN, new UserInfo(IDENT_UNKNOWN));
+        userInfoList.put(IDENT_SERVER_CONSOLE, new UserInfo(IDENT_SERVER_CONSOLE, Instant.now(), Instant.now(), 0));
+        userInfoList.put(IDENT_UNKNOWN, new UserInfo(IDENT_UNKNOWN, Instant.now(), Instant.now(), 0));
     }
 
     public static UserManager getInstance() {
@@ -40,35 +41,38 @@ public class UserManager {
     }
 
     /**
-     * Add user info
+     * Add userinfo
      *
-     * @param player {@link Player}
+     * @param uuid player uuid
+     * @param first first join instant
+     * @param last last join instant
+     * @param playTime playtime
+     * @return {@link UserInfo}
      */
-    private void addUser(Player player) {
-        UserInfo userInfo = new UserInfo(player);
+    private UserInfo addUser(String uuid, Instant first, Instant last, long playTime) {
+        UserInfo userInfo = new UserInfo(uuid, first, last, playTime);
         userInfoList.put(userInfo.getUuid(), userInfo);
-    }
-
-    /**
-     * Remove user info
-     *
-     * @param player {@link Player}
-     */
-    private void removeUser(Player player) {
-        userInfoList.remove(player.getUniqueId().toString());
+        return userInfo;
     }
 
     /**
      * Player joins to server
      *
-     * @param player {@link Player}
+     * @param uuid
+     * @param first
+     * @param last
+     * @param playTime
      */
-    public void joinUser(Player player) {
-        Optional<UserInfo> userInfo = findUser(player);
+    public UserInfo joinUser(String uuid, Instant first, Instant last, long playTime) {
+        Optional<UserInfo> userInfo = findUser(uuid);
         if (userInfo.isPresent()) {
-            userInfo.get().join();
+            UserInfo info = userInfo.get();
+            info.join(last, playTime);
+            return info;
         } else {
-            addUser(player);
+            UserInfo info = addUser(uuid, first, last, playTime);
+            info.join(last, playTime);
+            return info;
         }
     }
 
@@ -76,10 +80,12 @@ public class UserManager {
      * Player exits from server
      *
      * @param player {@link Player}
+     * @return Logout userinfo
      */
-    public void exitUser(Player player) {
+    public Optional<UserInfo> exitUser(Player player) {
         Optional<UserInfo> userInfo = findUser(player);
         userInfo.ifPresent(UserInfo::exit);
+        return userInfo;
     }
 
     /**

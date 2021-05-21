@@ -15,6 +15,8 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 
 public class UnmuteCommand extends BaseCommand{
@@ -34,15 +36,22 @@ public class UnmuteCommand extends BaseCommand{
         String sourceUuid = getCommandSourceUuid(src);
         Player player = args.<Player>getOne("player").get();
 
+        String uuid = player.getUniqueId().toString();
+
         ChatDecorator.getInstance().getLogger().info(
                 new StringBuilder().append("Execute unmute command: ")
-                        .append(sourceUuid).append(" -> ").append(player.getUniqueId())
+                        .append(sourceUuid).append(" -> ").append(uuid)
                         .toString());
 
         boolean result = UserManager.getInstance().unmuteUser(
-                player.getUniqueId().toString(),
-                sourceUuid);
+                uuid, sourceUuid);
         if (result) {
+            try {
+                ChatDecorator.getInstance().getDb().unmute(uuid, sourceUuid, Instant.now());
+            } catch (SQLException e) {
+                ChatDecorator.getInstance().getLogger().error("MuteCommand insert sql failed: " + e);
+                e.printStackTrace();
+            }
             src.sendMessage(Text.of("해당 유저의 뮤트를 해제했습니다."));
             Message msg = new Message(player);
             String formatted = TemplateParser.getInstance().parse(Config.getInstance().getUnmuteTemplate(), msg);

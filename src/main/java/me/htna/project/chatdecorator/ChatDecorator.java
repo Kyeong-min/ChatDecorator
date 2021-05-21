@@ -2,21 +2,23 @@ package me.htna.project.chatdecorator;
 
 import com.google.inject.Inject;
 import lombok.Getter;
-import me.htna.project.chatdecorator.commands.MuteCommand;
-import me.htna.project.chatdecorator.commands.MuteLogCommand;
-import me.htna.project.chatdecorator.commands.ReloadCommand;
-import me.htna.project.chatdecorator.commands.UnmuteCommand;
+import me.htna.project.chatdecorator.commands.*;
+import me.htna.project.chatdecorator.database.H2Embedded;
+import me.htna.project.chatdecorator.database.entities.CHATLOG;
+import me.htna.project.chatdecorator.database.entities.MUTEINFO;
+import me.htna.project.chatdecorator.database.entities.USERINFO;
 import me.htna.project.chatdecorator.placeholderHandlers.DefaultPlaceholderHandler;
 import me.htna.project.chatdecorator.placeholderHandlers.LPPlaceholderHandler;
 import me.htna.project.chatdecorator.struct.Message;
+import me.htna.project.chatdecorator.struct.MuteInfo;
 import me.htna.project.chatdecorator.struct.UserInfo;
 import net.luckperms.api.LuckPerms;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
+import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.asset.Asset;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.entity.living.player.Player;
@@ -24,14 +26,23 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.event.game.state.GameStoppedServerEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.service.ProviderRegistration;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Plugin(
@@ -60,11 +71,22 @@ public class ChatDecorator {
     @Getter
     private ConfigurationLoader<CommentedConfigurationNode> configManager;
     /**
+     * {@link Game}
+     */
+    @Inject
+    private Game game;
+    /**
      * {@link Logger}
      */
     @Inject
     @Getter
     private Logger logger;
+
+    @Inject
+    private PluginContainer plugin;
+
+    @Getter
+    private H2Embedded db;
 
     public ChatDecorator() {
         ChatDecorator.instance = this;
@@ -82,7 +104,8 @@ public class ChatDecorator {
         CommandSpec.Builder specBuilder = CommandSpec.builder()
                 .description(Text.of("Root of ChatDecorator command"))
                 .permission("hatena.chatdecorator")
-                .child(new ReloadCommand().buildSelf(), ReloadCommand.ALIAS);
+                .child(new ReloadCommand().buildSelf(), ReloadCommand.ALIAS)
+                .child(new ChatLogCommand().buildSelf(), ChatLogCommand.ALIAS);
 
         if (Config.getInstance().isEnableMute()) {
             specBuilder.child(new MuteCommand().buildSelf(), MuteCommand.ALIAS)
@@ -92,7 +115,7 @@ public class ChatDecorator {
 
         CommandSpec spec = specBuilder.build();
 
-        Sponge.getCommandManager().register(this, spec, "chatdecorator", "cd", "CD");
+        Sponge.getCommandManager().register(this, spec, "chatdecorator", "cd");
     }
 
     /**
@@ -108,6 +131,25 @@ public class ChatDecorator {
         return TextSerializers.FORMATTING_CODE.deserialize(formatted);
     }
 
+    private void initDbAsset() {
+        String dbFile = "chatdeco.h2.mv.db";
+        Path path = Paths.get(game.getGameDirectory().toString(), "chatdecorator");
+        Path filepath = Paths.get(path.toString(), dbFile);
+        if (Files.notExists(filepath)) {
+            Optional<Asset> asset = plugin.getAsset(dbFile);
+            if (!asset.isPresent()) {
+                logger.error("DB Asset not founded!!!");
+            }
+
+            try {
+                asset.get().copyToFile(filepath);
+            } catch (IOException e) {
+                logger.error("Failed copy db asset to disk");
+                e.printStackTrace();
+            }
+        }
+    }
+
     /**
      * GameInitializationEvent handler
      *
@@ -116,7 +158,12 @@ public class ChatDecorator {
     @Listener
     public void onInitialization(GameInitializationEvent event) {
         logger.debug("ChatDecorator#onInitialization");
+
         Config.getInstance();
+        initDbAsset();
+
+        db = new H2Embedded();
+        db.connect(Paths.get(game.getGameDirectory().toString(), "chatdecorator", "chatdeco.h2"));
 
         try {
             TemplateParser.getInstance().addPlaceholder(new DefaultPlaceholderHandler());
@@ -135,7 +182,6 @@ public class ChatDecorator {
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
         logger.debug("ChatDecorator#onServerStart");
-        ConfigurationNode node = configManager.createEmptyNode(ConfigurationOptions.defaults());
         Optional<ProviderRegistration<LuckPerms>> provider = Sponge.getServiceManager().getRegistration(LuckPerms.class);
         if (provider.isPresent()) {
             logger.info("Found luckPerms");
@@ -150,6 +196,12 @@ public class ChatDecorator {
         logger.info("ChatDecorator is run");
     }
 
+    @Listener
+    public void onServerStopped(GameStoppedServerEvent event) {
+        if (db != null)
+            db.disconnect();
+    }
+
     /**
      * ClientConnectionEvent.Join event handler
      *
@@ -158,31 +210,46 @@ public class ChatDecorator {
     @Listener
     public void onJoin(ClientConnectionEvent.Join event) {
         logger.debug("ChatDecorator#onJoin");
-
-        // Get player instance.
         Player player = event.getTargetEntity();
-        UserManager.getInstance().joinUser(player);
+        String uuid = player.getUniqueId().toString();
+
+        Instant first = player.firstPlayed().get();
+        Instant last = player.lastPlayed().get();
 
         // Get configuration instance
         Config config = Config.getInstance();
+        try {
+            Optional<USERINFO> table = db.selectUserInfo(uuid);
+            if (table.isPresent()) {
+                db.updateUserInfo(uuid, last);
+                UserInfo userinfo = UserManager.getInstance().joinUser(uuid, first, last, table.get().getPlaytime());
 
-        if (config.isShowWelcomeMessage()) {
-            // Get player's first and last join instant.
-            Instant first = player.firstPlayed().get();
-            Instant last = player.lastPlayed().get();
+                // 뮤트 정보 처리
+                List<MUTEINFO> muteInfos = db.selectMuteInfo(uuid);
+                List<MuteInfo> muteInfos_ = new ArrayList<>();
+                for (MUTEINFO muteInfo : muteInfos)
+                    muteInfos_.add(new MuteInfo(muteInfo));
 
-            if (first.equals(last)) {
-                // send welcome message
-                Text text = makeText(config.getWelcomeTemplate(), new Message(player));
-                player.sendMessage(text);
-                return;
+                userinfo.setMuteInfoList(muteInfos_);
+
+                if (userinfo.isMute()) {
+                    Message msg = new Message(player);
+                    Text text = makeText(config.getChatIgnoreTemplate(), msg);
+                    player.sendMessage(text);
+                }
+
+                if (config.isShowJoinMessage())    // send join message
+                    player.sendMessage(makeText(config.getJoinTemplate(), new Message(player)));
+            } else {
+                logger.info("Join new player: " + uuid);
+                db.insertUserInfo(player.getUniqueId().toString(), first, last);
+                UserManager.getInstance().joinUser(uuid, first, last, 0);
+
+                if (config.isShowWelcomeMessage()) // send welcome message
+                    player.sendMessage(makeText(config.getWelcomeTemplate(), new Message(player)));
             }
-        }
-
-        if (config.isShowJoinMessage()) {
-            // send join message
-            Text text = makeText(config.getJoinTemplate(), new Message(player));
-            player.sendMessage(text);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -195,7 +262,17 @@ public class ChatDecorator {
     public void onDisconnect(ClientConnectionEvent.Disconnect event) {
         logger.debug("ChatDecorator#onDisconnect");
         Player player = event.getTargetEntity();
-        UserManager.getInstance().exitUser(player);
+        Optional<UserInfo> userinfo = UserManager.getInstance().exitUser(player);
+        userinfo.ifPresent(x -> {
+            long elapsed = x.getPlayTime() + Instant.now().getEpochSecond() - x.getLastJoin().getEpochSecond();
+            logger.info("Player disconnect, playtime: " + elapsed);
+            try {
+                db.updateUserPlaytime(x.getUuid(), elapsed);
+            } catch (SQLException e) {
+                logger.error("User playtime update failed: " + e);
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -210,19 +287,28 @@ public class ChatDecorator {
     @Listener
     public void onChat(MessageChannelEvent.Chat event, @First Player player) {
         logger.debug("ChatDecorator#onChat");
-        if (event.isCancelled() || !Sponge.getServer().getOnlinePlayers().contains(player))
+        if (event.isCancelled()) {
+            insertChatLog(event, player, CHATLOG.Reason.EVENT_CANCEL);
             return;
+        }
+
+        if (!Sponge.getServer().getOnlinePlayers().contains(player)) {
+            insertChatLog(event, player, CHATLOG.Reason.PLAYER_NOT_ONLINE);
+            return;
+        }
 
         try {
             Optional<UserInfo> userInfo = UserManager.getInstance().findUser(player);
             if (!userInfo.isPresent()) {
                 logger.warn("Userinfo not found, uuid: " + player.getUniqueId() + ", name: " + player.getName());
+                insertChatLog(event, player, CHATLOG.Reason.ERROR);
                 return;
             }
 
             Config config = Config.getInstance();
             Message msg = new Message(event);
             if (config.isEnableMute() && userInfo.get().isMute()) {
+                insertChatLog(event, player, CHATLOG.Reason.MUTE);
                 Text text = makeText(config.getChatIgnoreTemplate(), msg);
                 player.sendMessage(text);
                 event.setCancelled(true);
@@ -231,10 +317,20 @@ public class ChatDecorator {
 
             Text text = makeText(config.getChatTemplate(), msg);
             event.setMessage(text);
+            insertChatLog(event, player, CHATLOG.Reason.SUCCESS);
         } catch (Exception e) {
             logger.error("ChatDecorator#onChat occur exception: " + e);
             if (e.getCause() != null)
                 e.getCause().printStackTrace();
+        }
+    }
+
+    private void insertChatLog(MessageChannelEvent.Chat event, @First Player player, CHATLOG.Reason reason) {
+        try {
+            db.insertChatLog(player.getUniqueId().toString(), event.getRawMessage().toPlain(), Instant.now(), reason);
+        } catch (SQLException e) {
+            logger.error("Chat log write error: " + e);
+            e.printStackTrace();
         }
     }
 }

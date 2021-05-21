@@ -3,6 +3,7 @@ package me.htna.project.chatdecorator.struct;
 import lombok.Getter;
 import org.spongepowered.api.entity.living.player.Player;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,45 +17,51 @@ public class UserInfo {
     private final String uuid;
 
     /**
+     * First join datetime
+     */
+    @Getter
+    private Instant firstJoin;
+
+    /**
+     * Last Join datetime
+     */
+    @Getter
+    private Instant lastJoin;
+
+    /**
+     * Playtime second
+     */
+    @Getter
+    private long playTime;
+
+    /**
      * Get user's connection status
      */
     @Getter
     private boolean isJoined;
 
-    private final List<MuteInfo> muteInfoList;
-
-    /**
-     * CTor
-     *
-     * @param player {@link Player}
-     */
-    public UserInfo(Player player) {
-        this(player.getUniqueId());
-    }
-
-    /**
-     * CTor
-     *
-     * @param uuid Player's uuid
-     */
-    public UserInfo(UUID uuid) {
-        this(uuid.toString());
-    }
+    private List<MuteInfo> muteInfoList;
 
     /**
      * CTor
      *
      * @param uuid Player's uuid string
      */
-    public UserInfo(String uuid) {
+    public UserInfo(String uuid, Instant first, Instant last, long playTime) {
         this.uuid = uuid;
+        this.firstJoin = first;
+        this.lastJoin = last;
+        this.playTime = playTime;
+
         muteInfoList = new ArrayList<>();
     }
 
     /**
      * Player joins the server
      */
-    public void join() {
+    public void join(Instant time, long playTime) {
+        this.lastJoin = time;
+        this.playTime = playTime;
         this.isJoined = true;
     }
 
@@ -90,6 +97,10 @@ public class UserInfo {
      */
     public boolean isMute() {
         return getLastMuteInfo().map(MuteInfo::isMute).orElse(false);
+    }
+
+    public void setMuteInfoList(List<MuteInfo> muteinfos) {
+        this.muteInfoList = muteinfos;
     }
 
     /**

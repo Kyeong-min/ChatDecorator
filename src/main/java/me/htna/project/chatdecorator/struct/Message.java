@@ -1,6 +1,8 @@
 package me.htna.project.chatdecorator.struct;
 
 import lombok.Getter;
+import lombok.var;
+import me.htna.project.chatdecorator.UserManager;
 import org.spongepowered.api.data.manipulator.mutable.entity.HealthData;
 import org.spongepowered.api.data.manipulator.mutable.entity.JoinData;
 import org.spongepowered.api.entity.living.player.Player;
@@ -17,6 +19,9 @@ public class Message {
 
     @Getter
     private Player player;
+
+    @Getter
+    private UserInfo userInfo;
 
     @Getter
     private String userName;
@@ -53,6 +58,10 @@ public class Message {
             return;
 
         this.player = player;
+        var userInfo = UserManager.getInstance().findUser(player);
+        if (userInfo.isPresent())
+            this.userInfo = userInfo.get();
+
         userName = player.getName();
 
         JoinData joinData = player.getJoinData();

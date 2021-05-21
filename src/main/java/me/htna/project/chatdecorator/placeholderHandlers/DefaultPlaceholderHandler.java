@@ -31,6 +31,10 @@ import java.util.Optional;
  * mute_reason
  * unmute_source_name
  * unmute_datetime
+ * <p>
+ * first_join_datetime
+ * last_join_datetime
+ * playtime_minute
  */
 public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
 
@@ -153,6 +157,12 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
                 return getLastUnmuteSourceName(message.getPlayer());
             case "unmute_datetime":
                 return getLastUnmuteDateTime(message.getPlayer());
+            case "first_join_datetime":
+                return getDateTimeString(message.getUserInfo().getFirstJoin(), Config.getInstance().getDateTimeFormatter());
+            case "last_join_datetime":
+                return getDateTimeString(message.getUserInfo().getLastJoin(), Config.getInstance().getDateTimeFormatter());
+            case "playtime_minute":
+                return String.valueOf((int) (message.getUserInfo().getPlayTime() / 60.0f));
         }
 
         return null;

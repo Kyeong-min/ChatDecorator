@@ -1,9 +1,9 @@
 package me.htna.project.chatdecorator.struct;
 
 import lombok.Getter;
+import me.htna.project.chatdecorator.database.entities.MUTEINFO;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 /**
  * Player mute info class
@@ -57,6 +57,15 @@ public class MuteInfo {
      */
     public boolean isComplete() {
         return muteDateTime != null && unmuteDateTime != null;
+    }
+
+    public MuteInfo() {}
+    public MuteInfo(MUTEINFO table) {
+        this.muteSourceUuid = table.getMute_source_uuid();
+        this.reason = table.getReason();
+        this.muteDateTime = table.getMute_datetime();
+        table.getUnmute_source_uuid().ifPresent(x -> unmuteSourceUuid = x);
+        table.getUnmute_datetime().ifPresent(x -> unmuteDateTime = x);
     }
 
     /**
