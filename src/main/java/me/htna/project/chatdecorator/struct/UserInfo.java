@@ -17,6 +17,12 @@ public class UserInfo {
     private final String uuid;
 
     /**
+     * User's nickname
+     */
+    @Getter
+    private String nickname;
+
+    /**
      * First join datetime
      */
     @Getter
@@ -52,12 +58,16 @@ public class UserInfo {
         this.firstJoin = first;
         this.lastJoin = last;
         this.playTime = playTime;
+        this.nickname = "";
 
         muteInfoList = new ArrayList<>();
     }
 
     /**
      * Player joins the server
+     *
+     * @param time
+     * @param playTime
      */
     public void join(Instant time, long playTime) {
         this.lastJoin = time;
@@ -70,6 +80,15 @@ public class UserInfo {
      */
     public void exit() {
         this.isJoined = false;
+    }
+
+    /**
+     * Set user nickname
+     *
+     * @param nickname
+     */
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     /**

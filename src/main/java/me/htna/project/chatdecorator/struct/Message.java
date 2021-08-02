@@ -27,6 +27,9 @@ public class Message {
     private String userName;
 
     @Getter
+    private String nickName;
+
+    @Getter
     private Instant joinDate;
 
     @Getter
@@ -59,8 +62,10 @@ public class Message {
 
         this.player = player;
         var userInfo = UserManager.getInstance().findUser(player);
-        if (userInfo.isPresent())
+        if (userInfo.isPresent()) {
             this.userInfo = userInfo.get();
+            this.nickName = this.userInfo.getNickname();
+        }
 
         userName = player.getName();
 

@@ -65,15 +65,14 @@ public class UserManager {
      */
     public UserInfo joinUser(String uuid, Instant first, Instant last, long playTime) {
         Optional<UserInfo> userInfo = findUser(uuid);
+        UserInfo info;
         if (userInfo.isPresent()) {
-            UserInfo info = userInfo.get();
-            info.join(last, playTime);
-            return info;
+            info = userInfo.get();
         } else {
-            UserInfo info = addUser(uuid, first, last, playTime);
-            info.join(last, playTime);
-            return info;
+            info = addUser(uuid, first, last, playTime);
         }
+        info.join(last, playTime);
+        return info;
     }
 
     /**
@@ -161,6 +160,42 @@ public class UserManager {
      * @return user name
      */
     public String getName(UserInfo userInfo) {
-        return userInfo.getUuid();
+        return getName(userInfo.getUuid());
+    }
+
+    /**
+     * Set nickname
+     *
+     * @param uuid
+     * @param nickname
+     * @return
+     */
+    public boolean setNickname(String uuid, String nickname) {
+        Optional<UserInfo> userInfo = findUser(uuid);
+        if (!userInfo.isPresent())
+            return false;
+
+        userInfo.get().setNickname(nickname);
+        return true;
+    }
+
+    /**
+     * Get nickname
+     *
+     * @param uuid
+     * @return
+     */
+    public String getNickname(String uuid) {
+        if (uuid.equals(IDENT_SERVER_CONSOLE)) {
+            return "Console";
+        } else if (uuid.equals(IDENT_UNKNOWN)) {
+            return "Unknown";
+        }
+
+        Optional<UserInfo> userInfo = findUser(uuid);
+        if (!userInfo.isPresent())
+            return null;
+
+        return userInfo.get().getNickname();
     }
 }

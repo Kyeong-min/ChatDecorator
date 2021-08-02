@@ -6,6 +6,7 @@ import me.htna.project.chatdecorator.commands.*;
 import me.htna.project.chatdecorator.database.H2Embedded;
 import me.htna.project.chatdecorator.database.entities.CHATLOG;
 import me.htna.project.chatdecorator.database.entities.MUTEINFO;
+import me.htna.project.chatdecorator.database.entities.NICKNAME;
 import me.htna.project.chatdecorator.database.entities.USERINFO;
 import me.htna.project.chatdecorator.placeholderHandlers.DefaultPlaceholderHandler;
 import me.htna.project.chatdecorator.placeholderHandlers.LPPlaceholderHandler;
@@ -105,7 +106,8 @@ public class ChatDecorator {
                 .description(Text.of("Root of ChatDecorator command"))
                 .permission("hatena.chatdecorator")
                 .child(new ReloadCommand().buildSelf(), ReloadCommand.ALIAS)
-                .child(new ChatLogCommand().buildSelf(), ChatLogCommand.ALIAS);
+                .child(new ChatLogCommand().buildSelf(), ChatLogCommand.ALIAS)
+                .child(new NicknameCommand().buildSelf(), NicknameCommand.ALIAS);
 
         if (Config.getInstance().isEnableMute()) {
             specBuilder.child(new MuteCommand().buildSelf(), MuteCommand.ALIAS)
@@ -141,6 +143,18 @@ public class ChatDecorator {
                 logger.error("DB Asset not founded!!!");
             }
 
+            // check folder
+            if (Files.notExists(path)) {
+                try {
+                    Files.createDirectory(path);
+                } catch (IOException e) {
+                    logger.error("Failed create db folder");
+                    e.printStackTrace();
+                    return;
+                }
+            }
+
+            // copy db file from asset
             try {
                 asset.get().copyToFile(filepath);
             } catch (IOException e) {
@@ -182,16 +196,19 @@ public class ChatDecorator {
     @Listener
     public void onServerStart(GameStartedServerEvent event) {
         logger.debug("ChatDecorator#onServerStart");
-        Optional<ProviderRegistration<LuckPerms>> provider = Sponge.getServiceManager().getRegistration(LuckPerms.class);
-        if (provider.isPresent()) {
-            logger.info("Found luckPerms");
-            luckPerms = provider.get();
-            LPPlaceholderHandler lpPlaceholder = new LPPlaceholderHandler(luckPerms.getProvider());
-            try {
-                TemplateParser.getInstance().addPlaceholder(lpPlaceholder);
-            } catch (Exception ex) {
-                logger.error(ex.toString());
+        try {
+            Optional<ProviderRegistration<LuckPerms>> provider = Sponge.getServiceManager().getRegistration(LuckPerms.class);
+            if (provider.isPresent()) {
+                logger.info("Found luckPerms");
+                luckPerms = provider.get();
+                LPPlaceholderHandler lpPlaceholder = new LPPlaceholderHandler(luckPerms.getProvider());
+                try {
+                    TemplateParser.getInstance().addPlaceholder(lpPlaceholder);
+                } catch (Exception ex) {
+                    logger.error(ex.toString());
+                }
             }
+        } catch (java.lang.NoClassDefFoundError ex) {
         }
         logger.info("ChatDecorator is run");
     }
@@ -224,6 +241,10 @@ public class ChatDecorator {
                 db.updateUserInfo(uuid, last);
                 UserInfo userinfo = UserManager.getInstance().joinUser(uuid, first, last, table.get().getPlaytime());
 
+                // 닉네임 정보 처리
+                Optional<NICKNAME> nickname = db.selectNickname(uuid);
+                nickname.ifPresent(x -> userinfo.setNickname(x.getNickname()));
+
                 // 뮤트 정보 처리
                 List<MUTEINFO> muteInfos = db.selectMuteInfo(uuid);
                 List<MuteInfo> muteInfos_ = new ArrayList<>();
@@ -232,6 +253,7 @@ public class ChatDecorator {
 
                 userinfo.setMuteInfoList(muteInfos_);
 
+                // 뮤트 상태라면 유저에게 통지
                 if (userinfo.isMute()) {
                     Message msg = new Message(player);
                     Text text = makeText(config.getChatIgnoreTemplate(), msg);

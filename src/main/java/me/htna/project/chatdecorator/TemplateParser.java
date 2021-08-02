@@ -78,16 +78,16 @@ public class TemplateParser {
      * @return corresponding value
      */
     private String replace(String placeholder, Message message) {
-        ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, handler count: " + placeholders.size());
+        // ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, handler count: " + placeholders.size());
         return placeholders
                 .stream()
                 .filter(x -> {
-                    ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, Filtered placeholder handler: " + x.getPlaceholderHandlerName());
+                    // ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, Filtered placeholder handler: " + x.getPlaceholderHandlerName());
                     return x.IsTargetPlaceholder(placeholder);
                 })
                 .findFirst()
                 .map(x -> {
-                    ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, Selected placeholder handler: " + x.getPlaceholderHandlerName());
+                    // ChatDecorator.getInstance().getLogger().debug("TemplateParser#replace, Selected placeholder handler: " + x.getPlaceholderHandlerName());
                     return x.replace(placeholder, message);
                 })
                 .orElse(null);

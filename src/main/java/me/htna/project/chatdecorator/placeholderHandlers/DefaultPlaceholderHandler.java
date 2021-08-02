@@ -13,6 +13,7 @@ import java.util.Optional;
  * Built-in default placeholder handler
  * <p>
  * username
+ * nickname
  * joindate
  * lastdate
  * locale
@@ -123,6 +124,8 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
         switch (key) {
             case "username":
                 return message.getUserName();
+            case "nickname":
+                return message.getUserInfo().getNickname();
             case "joindate":
                 return getDateTimeString(message.getJoinDate(), Config.getInstance().getDateTimeFormatter());
             case "lastdate":

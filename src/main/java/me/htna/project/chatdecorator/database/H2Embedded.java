@@ -1,8 +1,10 @@
 package me.htna.project.chatdecorator.database;
 
+import lombok.var;
 import me.htna.project.chatdecorator.ChatDecorator;
 import me.htna.project.chatdecorator.database.entities.CHATLOG;
 import me.htna.project.chatdecorator.database.entities.MUTEINFO;
+import me.htna.project.chatdecorator.database.entities.NICKNAME;
 import me.htna.project.chatdecorator.database.entities.USERINFO;
 import org.slf4j.Logger;
 
@@ -34,7 +36,110 @@ public class H2Embedded {
     }
 
     /**
+     * Insert nickname info
      *
+     * @param uuid
+     * @param nickname
+     * @throws SQLException
+     */
+    public void insertNickname(String uuid, String nickname) throws SQLException {
+        String qry = "INSERT INTO NICKNAME (UUID, NICKNAME, DATETIME) VALUES (?, ?, ?)";
+        PreparedStatement pstat = null;
+        try {
+            pstat = connection.prepareStatement(qry);
+            pstat.setString(1, uuid);
+            pstat.setString(2, nickname);
+            pstat.setTimestamp(3, convertInstantToTimestamp(Instant.now()));
+
+            int result = pstat.executeUpdate();
+            if (result == 0)
+                logger.error("Nickname info insert failed");
+
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (pstat != null)
+                pstat.close();
+        }
+    }
+
+    /**
+     * Update nickname
+     *
+     * @param uuid
+     * @param nickname
+     * @throws SQLException
+     */
+    public void updateNickname(String uuid, String nickname) throws SQLException {
+        String qry = "UPDATE NICKNAME SET NICKNAME = ?, DATETIME = ? WHERE UUID = ?";
+        PreparedStatement pstat = null;
+        try {
+            pstat = connection.prepareStatement(qry);
+            pstat.setString(1, nickname);
+            pstat.setTimestamp(2, convertInstantToTimestamp(Instant.now()));
+            pstat.setString(3, uuid);
+
+            int result = pstat.executeUpdate();
+            if (result == 0)
+                logger.error("Update nickname failed");
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (pstat != null)
+                pstat.close();
+        }
+    }
+
+    /**
+     * Insert or update nickname
+     *
+     * @param uuid
+     * @param nickname
+     * @throws SQLException
+     */
+    public void insertOrUpdateNickname(String uuid, String nickname) throws SQLException {
+        var table = selectNickname(uuid);
+        if (table.isPresent()) {
+            updateNickname(uuid, nickname);
+        } else {
+            insertNickname(uuid, nickname);
+        }
+    }
+
+    /**
+     * Select nickname
+     *
+     * @param uuid
+     * @return
+     * @throws SQLException
+     */
+    public Optional<NICKNAME> selectNickname(String uuid) throws SQLException {
+        String qry = "SELECT * FROM NICKNAME WHERE UUID = ?";
+        PreparedStatement pstat = null;
+        ResultSet rs = null;
+        NICKNAME nickname = null;
+
+        try {
+            pstat = connection.prepareStatement(qry);
+            pstat.setString(1, uuid);
+
+            rs = pstat.executeQuery();
+            if (rs.next())
+                nickname = new NICKNAME(rs);
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (rs != null)
+                rs.close();
+            if (pstat != null)
+                pstat.close();
+        }
+
+        return Optional.ofNullable(nickname);
+    }
+
+    /**
+     * Insert mute info
      *
      * @param uuid
      * @param sourceUuid
