@@ -84,6 +84,7 @@ public class ChatDecorator {
     private Logger logger;
 
     @Inject
+    @Getter
     private PluginContainer plugin;
 
     @Getter
@@ -210,11 +211,14 @@ public class ChatDecorator {
             }
         } catch (java.lang.NoClassDefFoundError ex) {
         }
+
+        TabDecorationManager.getInstance().runTask();
         logger.info("ChatDecorator is run");
     }
 
     @Listener
     public void onServerStopped(GameStoppedServerEvent event) {
+        TabDecorationManager.getInstance().stopTask();
         if (db != null)
             db.disconnect();
     }
@@ -270,6 +274,10 @@ public class ChatDecorator {
                 if (config.isShowWelcomeMessage()) // send welcome message
                     player.sendMessage(makeText(config.getWelcomeTemplate(), new Message(player)));
             }
+
+            // Tab decoration 등록
+            TabDecorationManager.getInstance().addUser(player);
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -286,15 +294,16 @@ public class ChatDecorator {
         Player player = event.getTargetEntity();
         Optional<UserInfo> userinfo = UserManager.getInstance().exitUser(player);
         userinfo.ifPresent(x -> {
-            long elapsed = x.getPlayTime() + Instant.now().getEpochSecond() - x.getLastJoin().getEpochSecond();
-            logger.info("Player disconnect, playtime: " + elapsed);
+            logger.info("Player disconnect, playtime: " + x.getPlayTime());
             try {
-                db.updateUserPlaytime(x.getUuid(), elapsed);
+                db.updateUserPlaytime(x.getUuid(), x.getPlayTime());
             } catch (SQLException e) {
                 logger.error("User playtime update failed: " + e);
                 e.printStackTrace();
             }
         });
+        
+        TabDecorationManager.getInstance().removeUser(player);
     }
 
     /**

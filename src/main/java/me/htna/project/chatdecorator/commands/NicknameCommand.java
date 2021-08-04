@@ -1,6 +1,7 @@
 package me.htna.project.chatdecorator.commands;
 
 import me.htna.project.chatdecorator.ChatDecorator;
+import me.htna.project.chatdecorator.TabDecorationManager;
 import me.htna.project.chatdecorator.UserManager;
 import org.apache.commons.lang3.StringUtils;
 import org.spongepowered.api.command.CommandException;
@@ -8,6 +9,7 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 
 import java.sql.SQLException;
@@ -47,6 +49,8 @@ public class NicknameCommand extends BaseCommand {
                 ChatDecorator.getInstance().getLogger().error("Nickname command insert sql failed: " + e);
                 e.printStackTrace();
             }
+
+            TabDecorationManager.getInstance().addUser((Player) src);
             src.sendMessage(Text.of("닉네임이 변경되었습니다: " + nickname));
             return CommandResult.success();
         } else {

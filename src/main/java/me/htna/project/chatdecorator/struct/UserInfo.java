@@ -37,7 +37,6 @@ public class UserInfo {
     /**
      * Playtime second
      */
-    @Getter
     private long playTime;
 
     /**
@@ -80,6 +79,24 @@ public class UserInfo {
      */
     public void exit() {
         this.isJoined = false;
+    }
+
+    /**
+     * get play time
+     *
+     * @return
+     */
+    public long getPlayTime() {
+        return playTime + Instant.now().getEpochSecond() - getLastJoin().getEpochSecond();
+    }
+
+    /**
+     * get join elapsed time latest session
+     *
+     * @return
+     */
+    public long getJoinElapsedTime() {
+        return Instant.now().getEpochSecond() - getLastJoin().getEpochSecond();
     }
 
     /**

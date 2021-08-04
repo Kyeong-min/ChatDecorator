@@ -2,6 +2,7 @@ package me.htna.project.chatdecorator.commands;
 
 import me.htna.project.chatdecorator.ChatDecorator;
 import me.htna.project.chatdecorator.Config;
+import me.htna.project.chatdecorator.TabDecorationManager;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
@@ -22,6 +23,9 @@ public class ReloadCommand extends BaseCommand {
         ChatDecorator.getInstance().getLogger().info("Execute reload command");
         boolean result = Config.getInstance().reload();
         if (result) {
+            // tab decoration 리로드
+            TabDecorationManager.getInstance().reload();
+
             src.sendMessage(Text.of("ChatDecorator 설정을 리로드하였습니다."));
             ChatDecorator.getInstance().getLogger().info("Reload success");
             return CommandResult.success();

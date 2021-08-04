@@ -1,10 +1,12 @@
 package me.htna.project.chatdecorator.placeholderHandlers;
 
 import me.htna.project.chatdecorator.Config;
+import me.htna.project.chatdecorator.HardwareMonitor;
 import me.htna.project.chatdecorator.UserManager;
 import me.htna.project.chatdecorator.struct.Message;
 import me.htna.project.chatdecorator.struct.MuteInfo;
 import me.htna.project.chatdecorator.struct.UserInfo;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.Optional;
@@ -13,7 +15,7 @@ import java.util.Optional;
  * Built-in default placeholder handler
  * <p>
  * username
- * nickname
+ * nicknames
  * joindate
  * lastdate
  * locale
@@ -23,9 +25,21 @@ import java.util.Optional;
  * maxhealth
  * currenthealth
  * message
- * serverdatetime
- * serverdate
- * servertime
+ * <p>
+ * server_datetime
+ * server_date
+ * server_time
+ * server_ping
+ * server_tps
+ * server_usecpu
+ * server_usecpu_percent
+ * server_usemem_gb
+ * server_freemem_gb
+ * server_totalmem_gb
+ * server_usemem_mb
+ * server_freemem_mb
+ * server_totalmem_mb
+ * server_player_count
  * <p>
  * mute_source_name
  * mute_datetime
@@ -35,7 +49,8 @@ import java.util.Optional;
  * <p>
  * first_join_datetime
  * last_join_datetime
- * playtime_minute
+ * playtime_total_minute
+ * playtime_session_minute
  */
 public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
 
@@ -113,6 +128,15 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
     }
 
     /**
+     * Replase plaseholder %tps%
+     *
+     * @return TPS
+     */
+    private double getServerTPS() {
+        return Sponge.getServer().getTicksPerSecond();
+    }
+
+    /**
      * Parse and replace placeholder
      *
      * @param placeholder Placeholder key
@@ -144,12 +168,34 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
                 return message.getCurrentHealth();
             case "message":
                 return message.getMessage();
-            case "serverdatetime":
+            case "server_ping":
+                return String.valueOf(message.getPlayer().getConnection().getLatency());
+            case "server_player_count":
+                return String.valueOf(Sponge.getServer().getOnlinePlayers().size());
+            case "server_datetime":
                 return getNowDateTimeString(Config.getInstance().getDateTimeFormatter());
-            case "serverdate":
+            case "server_date":
                 return getNowDateString(Config.getInstance().getDateFormatter());
-            case "servertime":
+            case "server_time":
                 return getNowTimeString(Config.getInstance().getTimeFormatter());
+            case "server_tps":
+                return String.format("%.1f", getServerTPS());
+            case "server_usecpu":
+                return String.format("%.2f", HardwareMonitor.getInstance().getSystemCpuLoad());
+            case "server_usecpu_percent":
+                return String.format("%.2f %%", HardwareMonitor.getInstance().getSystemCpuLoad() * 100);
+            case "server_freemem_gb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemFreeMemory() / 1024f / 1024f / 1024f));
+            case "server_totalmem_gb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemTotalMemory() / 1024f / 1024f / 1024f));
+            case "server_usemem_gb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemUseMemory() / 1024f / 1024f / 1024f));
+            case "server_freemem_mb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemFreeMemory() / 1024f /  1024f));
+            case "server_totalmem_mb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemTotalMemory() / 1024f /  1024f));
+            case "server_usemem_mb":
+                return String.format("%.2f", (double)(HardwareMonitor.getInstance().getSystemUseMemory() / 1024f /  1024f));
             case "mute_source_name":
                 return getLastMuteSourceName(message.getPlayer());
             case "mute_reason":
@@ -164,8 +210,10 @@ public class DefaultPlaceholderHandler extends BasePlaceholderHandler {
                 return getDateTimeString(message.getUserInfo().getFirstJoin(), Config.getInstance().getDateTimeFormatter());
             case "last_join_datetime":
                 return getDateTimeString(message.getUserInfo().getLastJoin(), Config.getInstance().getDateTimeFormatter());
-            case "playtime_minute":
+            case "playtime_total_minute":
                 return String.valueOf((int) (message.getUserInfo().getPlayTime() / 60.0f));
+            case "playtime_session_minute":
+                return String.valueOf((int) (message.getUserInfo().getJoinElapsedTime() / 60.0f));
         }
 
         return null;

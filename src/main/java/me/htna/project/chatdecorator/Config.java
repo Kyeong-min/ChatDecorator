@@ -1,9 +1,13 @@
 package me.htna.project.chatdecorator;
 
+import com.google.common.reflect.TypeToken;
 import lombok.Getter;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ChatDecorator global configuration
@@ -12,6 +16,9 @@ import java.io.IOException;
  * 만약 스펀지 플러그인 리로드를 하거나 ChatDecorator 플러그인의 커멘드로 전역설정을 재설정하면
  * Config 클래스의 싱글턴 인스턴트를 완전히 새로 작성하고 대체하므로
  * 이 인스턴스 혹은 필드를 캐싱하면 리로드(재설정)된 내용이 반영되지 않을 수 있음
+ *
+ * 캐싱한다면 reload시에 적절하게 캐싱을 다시 할 필요가 있음
+ *
  */
 public class Config {
 
@@ -39,6 +46,13 @@ public class Config {
         public static final String MUTETEMPLATE = "muteTemplate";
         public static final String UNMUTETEMPLATE = "unmuteTemplate";
         public static final String CHATIGNORETEMPLATE = "chatIgnoreTemplate";
+
+        public static final String TABDECO = "tabDecoration";
+        public static final String ENABLETABDECO = "enableTabDeco";
+        public static final String HEADER = "header";
+        public static final String FOOTER = "footer";
+        public static final String REFRESHRATE = "refreshRate";
+        public static final String ENTRYTEMPLATE = "entryTemplate";
     }
 
     private static Config instance;
@@ -98,6 +112,21 @@ public class Config {
     @Getter
     private String chatIgnoreTemplate;
 
+    @Getter
+    private boolean enableTabDeco;
+
+    @Getter
+    private List<String> headerTemplateList;
+
+    @Getter
+    private List<String> footerTemplateList;
+
+    @Getter
+    private String entryTemplate;
+
+    @Getter
+    private int refreshRate;
+
     private Config() {
         isLoadCompleted = false;
         load();
@@ -125,6 +154,12 @@ public class Config {
         muteTemplate = "<SERVER> : You were muted by %mute_source_name%, reason: %mute_reason%";
         unmuteTemplate = "<SERVER> : You were unmuted by %unmute_source_name%";
         chatIgnoreTemplate = "<SERVER> : You were muted by %mute_source_name% at %mute_datetime%, reason: %mute_reason%";
+
+        enableTabDeco = false;
+        headerTemplateList = new ArrayList<>();
+        footerTemplateList = new ArrayList<>();
+        entryTemplate = "%username%";
+        refreshRate = 1000;
 
         if (save)
             save();
@@ -168,8 +203,15 @@ public class Config {
             unmuteTemplate = muteNode.getNode(KEYSTORE.UNMUTETEMPLATE).getString();
             chatIgnoreTemplate = muteNode.getNode(KEYSTORE.CHATIGNORETEMPLATE).getString();
 
+            ConfigurationNode tabDecoNode = configRoot.getNode(KEYSTORE.TABDECO);
+            enableTabDeco = tabDecoNode.getNode(KEYSTORE.ENABLETABDECO).getBoolean();
+            headerTemplateList = tabDecoNode.getNode(KEYSTORE.HEADER).getList(TypeToken.of(String.class));
+            footerTemplateList = tabDecoNode.getNode(KEYSTORE.FOOTER).getList(TypeToken.of(String.class));
+            entryTemplate = tabDecoNode.getNode(KEYSTORE.ENTRYTEMPLATE).getString();
+            refreshRate = tabDecoNode.getNode(KEYSTORE.REFRESHRATE).getInt();
+
             isLoadCompleted = true;
-        } catch (IOException ex) {
+        } catch (IOException | ObjectMappingException ex) {
             plugin.getLogger().error("An error occurred while loading this configuration: " + ex);
             plugin.getLogger().warn("Load default configurations.");
 
@@ -209,6 +251,13 @@ public class Config {
             muteNode.getNode(KEYSTORE.MUTETEMPLATE).setValue(muteTemplate);
             muteNode.getNode(KEYSTORE.UNMUTETEMPLATE).setValue(unmuteTemplate);
             muteNode.getNode(KEYSTORE.CHATIGNORETEMPLATE).setValue(chatIgnoreTemplate);
+
+            ConfigurationNode tabDecoNode = configRoot.getNode(KEYSTORE.TABDECO);
+            tabDecoNode.getNode(KEYSTORE.ENABLETABDECO).setValue(enableTabDeco);
+            tabDecoNode.getNode(KEYSTORE.HEADER).setValue(headerTemplateList);
+            tabDecoNode.getNode(KEYSTORE.FOOTER).setValue(footerTemplateList);
+            tabDecoNode.getNode(KEYSTORE.ENTRYTEMPLATE).setValue(entryTemplate);
+            tabDecoNode.getNode(KEYSTORE.REFRESHRATE).setValue(refreshRate);
 
             plugin.getConfigManager().save(configRoot);
         } catch (IOException ex) {
